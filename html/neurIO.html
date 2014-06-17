@@ -1,0 +1,162 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>neurIO</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-06-17"><meta name="DC.source" content="neurIO.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#3">Parse the input</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> [ varargout ] = neurIO( filename, varargin )
+</pre><pre class="codeinput"><span class="comment">%NEURIO File input/output from binary neurophysiology data formats</span>
+<span class="comment">%   Philip Putnam, 2014.</span>
+<span class="comment">%   Version 0.1.1</span>
+<span class="comment">%   This function serves as a wrapper, parsing input and utilizing the</span>
+<span class="comment">%   format specific functions for actual file reading and writing.</span>
+</pre><h2>Parse the input<a name="3"></a></h2><pre class="codeinput">p = inputParser; <span class="comment">% Create input parser objection</span>
+
+defaultMode = <span class="string">'pro'</span>; <span class="comment">% Default mode is programmatic</span>
+validModees = {<span class="string">'pro'</span>,<span class="string">'gui'</span>, <span class="string">'pop'</span>}; <span class="comment">% Options are programmatic, GUI, or pop-up windows</span>
+checkMode = @(x) any(validatestring(x,validModees));
+
+<span class="comment">%   Default values</span>
+defaultStart = -1; <span class="comment">% Time in miliseconds to start extraction, value of -1 is first time point</span>
+defaultStop = -1; <span class="comment">% Time in miliseconds to end extract, value of -1 is last time point</span>
+defaultResample = -1;
+
+<span class="comment">%   Set Parser</span>
+addRequired(p,<span class="string">'filename'</span>,@ischar);
+addOptional(p,<span class="string">'mode'</span>,defaultMode,checkMode);
+addParameter(p,<span class="string">'start'</span>,defaultStart,@isnumeric);
+addParameter(p,<span class="string">'stop'</span>,defaultStop,@isnumeric);
+addParameter(p,<span class="string">'resample'</span>,defaultResample,@isnumeric);
+
+p.KeepUnmatched = true; <span class="comment">% Don't worry about case-matching</span>
+
+parse(p,filename,varargin{:}); <span class="comment">% Parse</span>
+
+disp([<span class="string">'File name: '</span>,p.Results.filename])
+disp([<span class="string">'Mode: '</span>, p.Results.mode])
+
+<span class="keyword">if</span> ~isempty(fieldnames(p.Unmatched))
+   disp(<span class="string">'Extra inputs:'</span>)
+   disp(p.Unmatched)
+<span class="keyword">end</span>
+<span class="keyword">if</span> ~isempty(p.UsingDefaults)
+   disp(<span class="string">'Using defaults: '</span>)
+   disp(p.UsingDefaults)
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Error using neurIO (line 29)
+Not enough input arguments.
+</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [ varargout ] = neurIO( filename, varargin )
+%NEURIO File input/output from binary neurophysiology data formats
+%   Philip Putnam, 2014.
+%   Version 0.1.1
+%   This function serves as a wrapper, parsing input and utilizing the
+%   format specific functions for actual file reading and writing.
+
+%%  Parse the input
+p = inputParser; % Create input parser objection
+
+defaultMode = 'pro'; % Default mode is programmatic 
+validModees = {'pro','gui', 'pop'}; % Options are programmatic, GUI, or pop-up windows
+checkMode = @(x) any(validatestring(x,validModees));
+
+%   Default values
+defaultStart = -1; % Time in miliseconds to start extraction, value of -1 is first time point
+defaultStop = -1; % Time in miliseconds to end extract, value of -1 is last time point
+defaultResample = -1;
+
+%   Set Parser 
+addRequired(p,'filename',@ischar);
+addOptional(p,'mode',defaultMode,checkMode);
+addParameter(p,'start',defaultStart,@isnumeric);
+addParameter(p,'stop',defaultStop,@isnumeric);
+addParameter(p,'resample',defaultResample,@isnumeric);
+
+p.KeepUnmatched = true; % Don't worry about case-matching
+
+parse(p,filename,varargin{:}); % Parse
+
+disp(['File name: ',p.Results.filename])
+disp(['Mode: ', p.Results.mode])
+
+if ~isempty(fieldnames(p.Unmatched))
+   disp('Extra inputs:')
+   disp(p.Unmatched)
+end
+if ~isempty(p.UsingDefaults)
+   disp('Using defaults: ')
+   disp(p.UsingDefaults)
+end
+
+
+
+%%
+end
+
+
+##### SOURCE END #####
+--></body></html>

@@ -8,17 +8,11 @@ function [ varargout ] = neurIO( filename, varargin )
 %%  Parse the input
 p = inputParser; % Create input parser objection
 
-[pathstr,name,ext] = fileparts(filename); % Split filename input
-validFormats = {'.smr','.plx', '.pl2'}; % List of valid formats for input files
-%checkFormat = @(x) any(validatestring(x,validFormats)); % Function to check if is a valid formats
-any(validatestring(ext,validFormats))
-
 defaultMode = 'pro'; % Default mode is programmatic 
-validModes = {'pro','gui', 'pop'}; % Options are programmatic, GUI, or pop-up windows
-checkMode = @(x) any(validatestring(x,validModes)); % Function to check if is a valid mode
+validModees = {'pro','gui', 'pop'}; % Options are programmatic, GUI, or pop-up windows
+checkMode = @(x) any(validatestring(x,validModees)); % Function to check if is a valid mode
 
 checkFile = @(x) exist(x, 'file'); % Function to check input file exists
-
 
 %   Default values
 defaultStart = -1; % Time in miliseconds to start extraction, value of -1 is first time point

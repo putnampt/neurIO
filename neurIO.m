@@ -8,6 +8,7 @@ function [ varargout ] = neurIO( filename, varargin )
 %%  Parse the input
 p = inputParser; % Create input parser objection
 
+
 [pathstr,name,ext] = fileparts(filename); % Split filename input
 validFormats = {'.smr','.plx', '.pl2'}; % List of valid formats for input files
 %checkFormat = @(x) any(validatestring(x,validFormats)); % Function to check if is a valid formats

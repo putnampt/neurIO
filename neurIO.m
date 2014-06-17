@@ -57,5 +57,9 @@ end
 end
 
 function [file] = neurIO_resample(file, fs)
-%NEURIO_RESAMPLE Resample all channels to match fs
+%NEURIO_RESAMPLE Resamples all channels to a specified frequency (hertz)
+end
+
+function neurIO_writeFile(file, path)
+%NEURIO_WRITEFILE Writes file output to disk
 end

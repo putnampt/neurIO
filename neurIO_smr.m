@@ -225,3 +225,41 @@ end
 
 
 end
+
+function[interval, start]=getSampleInterval_smr(fID,chan)
+% getSampleInterval_smr returns the sampling interval in seconds 
+% on a waveform data channel in a file, i.e. the reciprocal of the
+% sampling rate for the channel, together with the time of the first sample
+%
+% [INTERVAL{, START}]=getSampleInterval_smr(FID, CHAN)
+% FID is the matlab file handle and CHAN is the channel number (1-max)
+% The sampling INTERVAL and, if requested START time for the data are
+% returned in seconds.
+% Note that the returned times are always in seconds.
+
+header=getHeader(fID);                                   % File header
+channel_info=getInfo(fID,chan);                              % Channel header
+block_header=getBlockHeaders(fID,chan);
+switch channel_info.kind                                            % Disk block headers
+    case {1,6,7,9}
+        switch header.systemID
+            case {1,2,3,4,5}                                                % Before version 6
+                if (isfield(channel_info,'divide'))
+                    interval=channel_info.divide*header.usPerTime*header.timePerADC*1e-6; % Convert to seconds
+                    start=block_header(2,1)*header.usPerTime*header.timePerADC*1e-6;
+                else
+                    warning('neurIO_smr: ldivide not defined Channel #%d.', chan);
+                    interval=[];
+                    start=[];
+                end;
+            otherwise                                                       % Version 6 and above
+                interval=channel_info.lChanDvd*header.usPerTime*header.dTimeBase;
+                start=block_header(2,1)*header.usPerTime*header.dTimeBase;
+        end
+    otherwise
+        warning('neurIO_smr: Invalid channel type Channel #%d.',chan);
+        interval=[];
+        start=[];
+        return;
+end
+end

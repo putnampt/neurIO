@@ -117,7 +117,14 @@ end
 info.tscounts = tscounts;
 info.wfcounts = wfcounts;
 info.evcounts = evcounts;
-
+info.raw_header = header;
+info.version =version;
+info.number_dspHeaders = ndsp;
+info.number_eventHeaders = nevents;
+info.number_analogHeaders = nslow;
+info.number_wavepoints = npw;
+info.number_pointsthres = npr;
+info.number_records = record;
 end
 
 function  [adfreq, n, ts, fn, ad] = getAnalog(fID, ch)

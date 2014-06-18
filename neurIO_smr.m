@@ -185,7 +185,7 @@ end
 
 
 channel_info=getInfo_smr(fID,chan);
-if(channel_info.kind==0) 
+if(channel_info.kind==0)
     warning('neurIO_smr: Channel #%d does not exist (or has been deleted).',chan);
     data=[];
     header=[];
@@ -193,41 +193,41 @@ if(channel_info.kind==0)
 end
 
 switch channel_info.kind
-case {1}
-    [data,header]=getAnalog(fID,chan,varargin{:});
-    [data,header]=convertToDouble(data,header);
-case {2,3,4}
-    [data,header]=getEventChannel(fID,chan,varargin{:});
-case {5}
-    [data,header]=getMarkerChannel(fID,chan,varargin{:});
-case {6}
-    [data,header]=getAnalogMarkerChannel(fID,chan,varargin{:});
-case {7}
-    [data,header]=getRealMarkerChannel(fID,chan,varargin{:});
-case {8}
-    [data,header]=getTextChannel(fID,chan,varargin{:});
-case {9}
-    [data,header]=getRealWaveChannel(fID,chan,varargin{:});
-otherwise
-    warning('neurIO_smr: Channel type not supported.');
-    data=[];
-    header=[];
-    return;
+    case {1}
+        [data,header]=getAnalog(fID,chan,varargin{:});
+        [data,header]=convertToDouble(data,header);
+    case {2,3,4}
+        [data,header]=getEventChannel(fID,chan,varargin{:});
+    case {5}
+        [data,header]=getMarkerChannel(fID,chan,varargin{:});
+    case {6}
+        [data,header]=getAnalogMarkerChannel(fID,chan,varargin{:});
+    case {7}
+        [data,header]=getRealMarkerChannel(fID,chan,varargin{:});
+    case {8}
+        [data,header]=getTextChannel(fID,chan,varargin{:});
+    case {9}
+        [data,header]=getRealWaveChannel(fID,chan,varargin{:});
+    otherwise
+        warning('neurIO_smr: Channel type not supported.');
+        data=[];
+        header=[];
+        return;
 end
 
 
 switch channel_info.kind
-case {1,6,7,9}
-    if isempty(header)==0
-        header.transpose=0;
-    end
+    case {1,6,7,9}
+        if isempty(header)==0
+            header.transpose=0;
+        end
 end
 
 
 end
 
-function[interval, start]=getSampleInterval_smr(fID,chan)
-% getSampleInterval_smr returns the sampling interval in seconds 
+function[interval, start]=getSampleInterval(fID,chan)
+% getSampleInterval_smr returns the sampling interval in seconds
 % on a waveform data channel in a file, i.e. the reciprocal of the
 % sampling rate for the channel, together with the time of the first sample
 %

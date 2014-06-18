@@ -120,26 +120,17 @@ info.evcounts = evcounts;
 
 end
 
-function  [adfreq, n, ts, fn, ad] = getADChannel(fID, ch)
+function  [adfreq, n, ts, fn, ad] = getAnalog(fID, ch)
 i = 0;
 n = 0;
 ts = 0;
 fn = 0;
 ad = 0;
 
-
-if(fID == -1)
-	disp('cannot open file');
-   return
-end
-
 % calculate file size
 fseek(fID, 0, 'eof');
 fsize = ftell(fID);
 fseek(fID, 0, 'bof');
-
-
-disp(strcat('file = ', filename));
 
 % read file header
 header = fread(fID, 64, 'int32');
@@ -224,6 +215,193 @@ if adpos-1 < count
    ad = ad(1:adpos-1);
 end
 
-disp(strcat('number of data points = ', num2str(n)));
+end
 
+function [n, ts] = getTimestamps(fID, ch, u)
+% INPUT:
+%   fID - fID
+%   channel - 1-based channel number
+%   unit  - unit number (0- invalid, 1-4 valid)
+% OUTPUT:
+%   n - number of timestamps
+%   ts - array of timestamps (in seconds)
+
+
+n = 0;
+ts = 0;
+
+% read file header
+header = fread(fID, 64, 'int32');
+freq = header(35);  % frequency
+ndsp = header(36);  % number of dsp channels
+nevents = header(37); % number of external events
+nslow = header(38);  % number of slow channels
+npw = header(39);  % number of points in wave
+npr = header(40);  % number of points before threshold
+tscounts = fread(fID, [5, 130], 'int32');
+wfcounts = fread(fID, [5, 130], 'int32');
+evcounts = fread(fID, [1, 512], 'int32');
+
+% skip variable headers 
+fseek(fID, 1020*ndsp + 296*nevents + 296*nslow, 'cof');
+
+% read the data
+record = 0;
+while feof(fID) == 0
+	type = fread(fID, 1, 'int16');
+	upperbyte = fread(fID, 1, 'int16');
+	timestamp = fread(fID, 1, 'int32');
+	channel = fread(fID, 1, 'int16');
+	unit = fread(fID, 1, 'int16');
+	nwf = fread(fID, 1, 'int16');
+	nwords = fread(fID, 1, 'int16');
+	toread = nwords;
+	if toread > 0
+	  wf = fread(fID, toread, 'int16');
+	end
+   	if type == 1
+         if channel == ch 
+            if unit == u
+ 	        	n = n + 1;
+         		ts(n) = timestamp/freq;
+            end
+      	 end
+   	end
+   
+   record = record + 1;
+   if feof(fID) == 1
+      break
+   end
+   
+end
+
+
+end
+
+function [n, ts, sv] = getEvents(fID, ch)
+% INPUT:
+%   filename - if empty string, will use File Open dialog
+%   channel - 1-based external channel number
+%             strobed channel has channel number 257  
+% OUTPUT:
+%   n - number of timestamps
+%   ts - array of timestamps 
+%   sv - array of strobed event values (filled only if channel is 257)
+
+n = 0;
+ts = 0;
+sv = 0;
+
+% read file header
+header = fread(fID, 64, 'int32');
+freq = header(35);  % frequency
+ndsp = header(36);  % number of dsp channels
+nevents = header(37); % number of external events
+nslow = header(38);  % number of slow channels
+npw = header(39);  % number of points in wave
+npr = header(40);  % number of points before threshold
+tscounts = fread(fID, [5, 130], 'int32');
+wfcounts = fread(fID, [5, 130], 'int32');
+evcounts = fread(fID, [1, 512], 'int32');
+
+% skip variable headers 
+fseek(fID, 1020*ndsp + 296*nevents + 296*nslow, 'cof');
+
+% read the data
+record = 0;
+while feof(fID) == 0
+	type = fread(fID, 1, 'int16');
+	upperbyte = fread(fID, 1, 'int16');
+	timestamp = fread(fID, 1, 'int32');
+	channel = fread(fID, 1, 'int16');
+	unit = fread(fID, 1, 'int16');
+	nwf = fread(fID, 1, 'int16');
+	nwords = fread(fID, 1, 'int16');
+	toread = nwords;
+	if toread > 0
+	  wf = fread(fID, toread, 'int16');
+	end
+   	if type == 4
+         if channel == ch 
+ 	        	n = n + 1;
+         		ts(n) = timestamp;
+				sv(n) = unit;
+      	 end
+   	end
+   
+   record = record + 1;
+   if feof(fID) == 1
+      break
+   end
+   
+end
+
+end
+
+function [n, npw, ts, wave] = getWaveforms(fID, ch, u)
+% INPUT:
+%   filename - if empty string, will use File Open dialog
+%   channel - 1-based channel number
+%   unit  - unit number (0- invalid, 1-4 valid)
+% OUTPUT:
+%   n - number of waveforms
+%   npw - number of points in each waveform
+%   ts - array of timestamps (in seconds) 
+%   wave - array of waveforms [npw, n], raw a/d values
+
+n = 0;
+npw = 0;
+ts = 0;
+wave = 0;
+
+% read file header
+header = fread(fID, 64, 'int32');
+freq = header(35);  % frequency
+ndsp = header(36);  % number of dsp channels
+nevents = header(37); % number of external events
+nslow = header(38);  % number of slow channels
+npw = header(39);  % number of points in wave
+npr = header(40);  % number of points before threshold
+tscounts = fread(fID, [5, 130], 'int32');
+wfcounts = fread(fID, [5, 130], 'int32');
+evcounts = fread(fID, [1, 512], 'int32');
+
+% skip variable headers
+fseek(fID, 1020*ndsp + 296*nevents + 296*nslow, 'cof');
+
+record = 0;
+wave = zeros(npw, 1);
+wf = zeros(npw, 1);
+
+% read data records
+while feof(fID) == 0
+   type = fread(fID, 1, 'int16');
+	upperbyte = fread(fID, 1, 'int16');
+	timestamp = fread(fID, 1, 'int32');
+	channel = fread(fID, 1, 'int16');
+   unit = fread(fID, 1, 'int16');
+   nwf = fread(fID, 1, 'int16');
+   nwords = fread(fID, 1, 'int16');
+   toread = nwords;
+   if toread > 0
+      wf = fread(fID, [toread, 1], 'int16');
+   end
+   if toread > 0
+   	if type == 1
+         if channel == ch 
+            if unit == u
+ 	       n = n + 1;
+               ts(n) = timestamp/freq;
+               wave(:, n) = wf;
+            end
+      	 end
+   	end
+   end
+   
+   record = record + 1;
+   if feof(fID) == 1
+      break
+   end
+   
+end
 end

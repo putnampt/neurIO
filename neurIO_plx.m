@@ -17,6 +17,7 @@ end
 [sampling_rate, number_samples, time_stamps, fragment_datapoints, sampled_analog] = getAnalog(fID, 1);
 plot(sampled_analog)
 
+
 fclose(fID);
 
 end
@@ -41,7 +42,7 @@ info.wf_count = zeros(5, 130);
 info.ev_count = zeros(1, 512);
 % skip variable headers
 fseek(fID, 1020*info.number_dsp_channels + 296*info.number_event_channels + 296*info.number_analog_channels, 'cof');
-record = 0;
+info.records = 0;
 while feof(fID) == 0
     type = fread(fID, 1, 'int16');
     upperbyte = fread(fID, 1, 'int16');
@@ -64,23 +65,12 @@ while feof(fID) == 0
         info.ev_count(channel+1) = info.ev_count(channel+1) + 1;
     end
     
-    record = record + 1;
+    info.records = info.records + 1;
     if feof(fID) == 1
         break
     end
 end
 
-% info.info.ts_count = info.ts_count;
-% info.info.wf_count = info.wf_count;
-% info.info.ev_count = info.ev_count;
-% info.raw_header = info.raw_header;
-% info.info.version =info.version;
-% info.number_dspHeaders = info.number_dsp_channels;
-% info.number_eventHeaders = info.number_event_channels;
-% info.number_analogHeaders = info.number_analog_channels;
-% info.number_wavepoints = info.waveform_points;
-% info.number_pointsthres = info.points_before_threshold;
-% info.number_records = record;
 end
 
 function  [sampling_rate, number_samples, time_stamps, fragment_datapoints, sampled_analog] = getAnalog(fID, channel_number)
@@ -119,13 +109,13 @@ end
 fseek(fID, 1020*info.number_dsp_channels + 296*info.number_event_channels, 'cof');
 
 % read one A/D info.raw_header and get the frequency
-adheader = fread(fID, 74, 'int32');
-sampling_rate = adheader(10);
+analog_chan_header = fread(fID, 74, 'int32');
+sampling_rate = analog_chan_header(10);
 
 % skip all other a/d headers
 fseek(fID, 296*(info.number_analog_channels-1), 'cof');
 
-record = 0;
+records = 0;
 
 wf = zeros(1, info.waveform_points);
 adpos = 1;
@@ -164,9 +154,9 @@ while feof(fID) == 0
         end
     end
     
-    record = record + 1;
-    if mod(record, 1000) == 0
-        %disp(sprintf('records %d points %d (%.1f%%)', record, number_samples, 100*ftell(fID)/fsize));
+    records = records + 1;
+    if mod(records, 1000) == 0
+        %disp(sprintf('records %d points %d (%.1f%%)', records, number_samples, 100*ftell(fID)/fsize));
     end
     
     if feof(fID) == 1
@@ -210,7 +200,7 @@ info.ev_count = fread(fID, [1, 512], 'int32');
 fseek(fID, 1020*info.number_dsp_channels + 296*info.number_event_channels + 296*info.number_analog_channels, 'cof');
 
 % read the data
-record = 0;
+records = 0;
 while feof(fID) == 0
     type = fread(fID, 1, 'int16');
     upperbyte = fread(fID, 1, 'int16');
@@ -232,7 +222,7 @@ while feof(fID) == 0
         end
     end
     
-    record = record + 1;
+    records = records + 1;
     if feof(fID) == 1
         break
     end
@@ -272,7 +262,7 @@ info.ev_count = fread(fID, [1, 512], 'int32');
 fseek(fID, 1020*info.number_dsp_channels + 296*info.number_event_channels + 296*info.number_analog_channels, 'cof');
 
 % read the data
-record = 0;
+records = 0;
 while feof(fID) == 0
     type = fread(fID, 1, 'int16');
     upperbyte = fread(fID, 1, 'int16');
@@ -293,7 +283,7 @@ while feof(fID) == 0
         end
     end
     
-    record = record + 1;
+    records = records + 1;
     if feof(fID) == 1
         break
     end
@@ -333,7 +323,7 @@ info.ev_count = fread(fID, [1, 512], 'int32');
 % skip variable headers
 fseek(fID, 1020*info.number_dsp_channels + 296*info.number_event_channels + 296*info.number_analog_channels, 'cof');
 
-record = 0;
+records = 0;
 waveforms = zeros(waveform_points, 1);
 wf = zeros(waveform_points, 1);
 
@@ -362,7 +352,7 @@ while feof(fID) == 0
         end
     end
     
-    record = record + 1;
+    records = records + 1;
     if feof(fID) == 1
         break
     end

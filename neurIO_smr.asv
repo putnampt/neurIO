@@ -1,0 +1,161 @@
+function [ output_args ] = neurIO_smr( input_args )
+%NEURIO_SMR Summary of this function goes here
+%   Detailed explanation goes here
+
+fID = fopen(path);
+
+fclose(fID);
+
+end
+
+function [header] = getHeader(fID)
+    try
+        frewind(fID);
+    catch err
+        warning(['neurIO_smr:\t' ferror(fID) 'Invalid file handle when reading header.' ]);
+        header=[];
+        return;
+    end
+
+    header.FileIdentifier=fopen(fID);
+    header.systemID=fread(fID,1,'int16');
+    header.copyright=fscanf(fID,'%c',10);
+    header.Creator=fscanf(fID,'%c',8);
+    header.usPerTime=fread(fID,1,'int16');
+    header.timePerADC=fread(fID,1,'int16');
+    header.filestate=fread(fID,1,'int16');
+    header.firstdata=fread(fID,1,'int32');
+    header.channels=fread(fID,1,'int16');
+    header.chansize=fread(fID,1,'int16');
+    header.extraData=fread(fID,1,'int16');
+    header.buffersize=fread(fID,1,'int16');
+    header.osFormat=fread(fID,1,'int16');
+    header.maxFTime=fread(fID,1,'int32');
+    header.dTimeBase=fread(fID,1,'float64');
+    if header.systemID<6
+        header.dTimeBase=1e-6;
+    end
+    header.timeDate.Detail=fread(fID,6,'uint8');
+    header.timeDate.Year=fread(fID,1,'int16');
+    if header.systemID<6
+        header.timeDate.Detail=zeros(6,1);
+        header.timeDate.Year=0;
+    end
+    header.pad=fread(fID,52,'char=>char');
+    header.fileComment=cell(5,1);    
+
+    pointer=ftell(fID);
+    
+    for i=1:5
+        bytes=fread(fID,1,'uint8');
+        header.fileComment{i}=fread(fID,bytes,'char=>char')';
+        pointer=pointer+80;
+        fseek(fID,pointer,'bof');
+    end
+end
+
+function [channel_info] = getInfo(fID, chan)
+header=getHeader_smr(fID);           % Get file header
+if(header.channels<chan)
+    warning('getInfo_smr: Channel number #%d too large for this file',chan);
+    chanInfo=[];
+end;
+
+
+base=512+(140*(chan-1));            % Offset due to file header and preceding channel headers
+fseek(fID,base,'bof');
+chanInfo.FileName=fopen(fID);
+chanInfo.channel=chan; 
+chanInfo.delSize=fread(fID,1,'int16');
+chanInfo.nextDelBlock=fread(fID,1,'int32');
+chanInfo.firstblock=fread(fID,1,'int32');
+chanInfo.lastblock=fread(fID,1,'int32');
+chanInfo.blocks=fread(fID,1,'int16');
+chanInfo.nExtra=fread(fID,1,'int16');
+chanInfo.preTrig=fread(fID,1,'int16');
+chanInfo.free0=fread(fID,1,'int16');
+chanInfo.phySz=fread(fID,1,'int16');
+chanInfo.maxData=fread(fID,1,'int16');
+bytes=fread(fID,1,'uint8');
+pointer=ftell(fID);
+chanInfo.comment=fread(fID,bytes,'char=>char')';
+fseek(fID,pointer+71,'bof');
+chanInfo.maxChanTime=fread(fID,1,'int32');
+chanInfo.lChanDvd=fread(fID,1,'int32');
+chanInfo.phyChan=fread(fID,1,'int16');
+bytes=fread(fID,1,'uint8');
+pointer=ftell(fID);
+chanInfo.title=fread(fID,bytes,'char=>char')';
+fseek(fID,pointer+9,'bof');
+chanInfo.idealRate=fread(fID,1,'float32');
+chanInfo.kind=fread(fID,1,'uint8');
+chanInfo.pad=fread(fID,1,'int8');               
+
+chanInfo.scale=[];
+chanInfo.offset=[];
+chanInfo.units=[];
+chanInfo.divide=[];
+chanInfo.interleave=[];
+chanInfo.min=[];
+chanInfo.max=[];
+chanInfo.initLow=[];
+chanInfo.nextLow=[];
+
+   switch chanInfo.kind
+   case {1,6}
+       chanInfo.scale=fread(fID,1,'float32');
+       chanInfo.offset=fread(fID,1,'float32');
+       bytes=fread(fID,1,'uint8');
+       pointer=ftell(fID);
+       chanInfo.units=fread(fID,bytes,'char=>char')';
+       fseek(fID,pointer+5,'bof');
+       if (header.systemID<6)
+           chanInfo.divide=fread(fID,1,'int32');
+       else
+           chanInfo.interleave=fread(fID,1,'int32');
+       end;
+   case {7,9}
+       chanInfo.min=fread(fID,1,'float32');        % With test data from Spike2 v4.05 min=scale and max=offset
+       chanInfo.max=fread(fID,1,'float32');        % as for ADC data
+       bytes=fread(fID,1,'uint8');
+       pointer=ftell(fID);
+       chanInfo.units=fread(fID,bytes,'char=>char')';
+       fseek(fID,pointer+5,'bof');
+       if (header.systemID<6)
+           chanInfo.divide=fread(fID,1,'int32');
+       else
+           chanInfo.interleave=fread(fID,1,'int32');
+       end;
+   case 4
+       chanInfo.initLow=fread(fID,1,'uchar');
+       chanInfo.nextLow=fread(fID,1,'uchar');
+   end
+                                                
+
+end
+
+function [channel_list] = listChannels(fID)
+    header = getHeader(fID);
+    
+    if isempty(header)
+        channel_list=[];
+        warning(['neurIO_smr:\t' ferror(fID) 'No channels found in header.' ]);
+        return
+    end
+    
+    actual_channels = 0;
+    
+    for i=1:header.channels
+        channel_info=getInfo(fID,i);
+        if(c.kind>0) 
+            actual_channels=actual_channels+1;
+            chanList(actual_channels).number=i;
+            chanList(actual_channels).kind=channel_info.kind;
+            chanList(actual_channels).title=channel_info.title;
+            chanList(actual_channels).comment=channel_info.comment;
+            chanList(actual_channels).physical_channel=channel_info.physical_chan;
+        end
+    end
+
+end
+

@@ -6,7 +6,7 @@ function [ varargout ] = neurIO( varargin )
 %   format specific functions for actual file reading and writing.
 
 %%  Hard coded varibles
-validFormats = {'.smr';'.plx';'.pl2'}; % List of valid formats for input files
+validFormats = {'.smr';'.plx';'.pl2';'.nev'}; % List of valid formats for input files
 
 %%  If no input parameters are specified, use pop-up to locate data file
 if size(varargin) == [0,0]
@@ -22,6 +22,7 @@ defaultStart = -1; % Time in miliseconds to start extraction, value of -1 is fir
 defaultStop = -1; % Time in miliseconds to end extract, value of -1 is last time point
 defaultResample = -1;
 defaultChannels = [];
+defaultWrite = -1;
 
 checkFile = @(x) exist(x, 'file'); % Function to check input file exists
 
@@ -31,6 +32,7 @@ addParameter(p,'start',defaultStart,@isnumeric);
 addParameter(p,'stop',defaultStop,@isnumeric);
 addParameter(p,'resample',defaultResample,@isnumeric);
 addParameter(p,'channels',defaultChannels);
+addParameter(p,'write',defaultWrite);
 p.KeepUnmatched = true; % Don't worry about case-matching for inputs
 
 parse(p,varargin{:}); % Parse the input
@@ -47,6 +49,7 @@ if ~isempty(p.UsingDefaults)
 end
 
 [pathstr,name,ext] = fileparts(p.Results.filename); % Split filename input
+ext = lower(ext); % Make sure the extension is lowercase for plaintext comparisons
 any(validatestring(ext,validFormats)); % Check to see if it's a valid format
 
 options =  p.Results; % Assign the matched parameters to a stucture
@@ -54,9 +57,18 @@ options =  p.Results; % Assign the matched parameters to a stucture
 switch ext
     case '.smr' 
         fprintf('Opening %s as .SMR file.\n', p.Results.filename)
-        neurIO_smr()
-    case {'.plx','.pl2'}
+        neurIO_smr('filename', p.Results.filename, 'channels', p.Results.channels, 'start', p.Results.start, 'stop', p.Results.stop, 'resample', p.Results.resample, 'write', p.Results.write)
+    case {'.plx'}
         fprintf('Opening %s as .PLX file.\n', p.Results.filename)
+        neurIO_plx('filename', p.Results.filename, 'channels', p.Results.channels, 'start', p.Results.start, 'stop', p.Results.stop, 'resample', p.Results.resample, 'write', p.Results.write)
+    case {'.pl2'}
+        fprintf('Opening %s as .PL2 file.\n', p.Results.filename)
+    case {'.nev'}
+        fprintf('Opening %s as .NEV file.\n', p.Results.filename)
+    case {'.nsx'}
+        fprintf('Opening %s as .NSX file.\n', p.Results.filename)
+    case {'.ddt'}
+        fprintf('Opening %s as .DDT file.\n', p.Results.filename)
     otherwise
         warning('Unexpected format.');
 end

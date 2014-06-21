@@ -12,7 +12,7 @@ if(fID == -1)
     return;
 end
 
-[info] = getInfo(fID)
+[info] = getInfo(fID);
 
 [sampling_rate, number_samples, time_stamps, fragment_datapoints, sampled_analog] = getAnalog(fID, 1);
 plot(sampled_analog)

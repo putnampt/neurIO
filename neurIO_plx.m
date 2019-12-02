@@ -3,7 +3,7 @@
 % clc
 % plx_path = fullfile(pwd, 'test', '4chDemoPLX.plx');
 
-function [file] = neurIO_plx(path)
+function [file] = neurIO_plx(plx_path)
 
 %Check if file exists
 if ~exist(plx_path, 'file')

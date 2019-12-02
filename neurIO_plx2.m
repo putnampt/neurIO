@@ -243,7 +243,8 @@ while feof(fID) == 0
                         adpos = adpos + nwords;
                     else
                         for i=1:nwords
-                            sampled_analog(adpos) = wf(i); adpos = adpos + 1;
+                            sampled_analog(adpos) = wf(i); 
+                            adpos = adpos + 1;
                         end
                     end
                 else
